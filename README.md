@@ -10,7 +10,6 @@ A compatible version of the kaspa-rest-server is available [here](https://github
 
 ## Binary releases
 For now, binary releases are built for linux/amd64 and linux/arm64.
-Docker images are available from https://hub.docker.com/r/supertypo/simply-kaspa-indexer
 
 ## Important notes
 
@@ -56,9 +55,6 @@ Please be so kind as to contribute back features you think could be beneficial t
 kaspa:qrjtsnnpjyvlmkffdqyayrny3qyen9yjkpuw7xvhsz36n69wmrfdyf3nwv67t
 
 # Getting started
-
-## Run using precompiled Docker image
-Please consult the [Docker Hub page](https://hub.docker.com/r/supertypo/simply-kaspa-indexer).
 
 ## Build and run from source
 These instructions are for Ubuntu 24.04, adjustments might be needed for other distributions (or versions). 
