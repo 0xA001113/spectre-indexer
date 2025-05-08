@@ -1,6 +1,5 @@
 use deadpool::managed::{Manager, Metrics, RecycleError, RecycleResult};
 use spectre_rpc_core::api::rpc::RpcApi;
-use spectre_rpc_core::RpcNetworkType;
 use spectre_wrpc_client::client::ConnectOptions;
 use spectre_wrpc_client::error::Error;
 use spectre_wrpc_client::prelude::*;
@@ -55,9 +54,7 @@ pub async fn connect_client(network_id: NetworkId, rpc_url: Option<String>) -> R
 
     if network_id != server_info.network_id {
         panic!("Network mismatch, expected '{}', actual '{}'", network_id, connected_network);
-    } else if !server_info.is_synced
-        || server_info.network_id.network_type == RpcNetworkType::Mainnet && server_info.virtual_daa_score < 107107107
-    {
+    } else if !server_info.is_synced {
         let err_msg = format!("Spectred {} is NOT synced", server_info.server_version);
         warn!("{err_msg}");
         Err(Error::Custom(err_msg))
