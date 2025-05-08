@@ -4,7 +4,7 @@ members = [
     "cli",
     "database",
     "mapping",
-    "kaspad",
+    "spectred",
     "indexer"
 ]
 
@@ -19,24 +19,24 @@ panic = "abort"
 
 [workspace.package]
 rust-version = "1.83.0"
-authors = ["suprtypo@pm.me"]
+authors = ["0xeuler@proton.me"]
 license = "MIT"
 license-file = "LICENSE"
 edition = "2021" # Rust edition
 
 [workspace.dependencies]
-simply-kaspa-cli = { path = "cli" }
-simply-kaspa-database = { path = "database" }
-simply-kaspa-mapping = { path = "mapping" }
-simply-kaspa-kaspad = { path = "kaspad" }
-kaspa-wrpc-client = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-rpc-core = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-p2p-lib = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-consensus-core = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-hashes = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-addresses = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-utils = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
-kaspa-txscript = { git = "https://github.com/kaspanet/rusty-kaspa.git", tag = "v1.0.0" }
+spectre-cli = { path = "cli" }
+spectre-database = { path = "database" }
+spectre-mapping = { path = "mapping" }
+spectre-spectred = { path = "spectred" }
+spectre-wrpc-client = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-rpc-core = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-p2p-lib = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-consensus-core = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-hashes = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-addresses = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-utils = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
+spectre-txscript = { git = "https://github.com/spectre-project/rusty-spectre.git", tag = "v0.3.17" }
 tokio = { version = "1.43.0", features = ["default", "signal"] }
 tonic = { version = "0.12.3", features = ["tls", "gzip"] }
 futures-util = { version = "0.3.31", default-features = false }

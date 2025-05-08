@@ -3,9 +3,9 @@ use crate::vars::save_checkpoint;
 use crate::web::model::metrics::Metrics;
 use crossbeam_queue::ArrayQueue;
 use log::{debug, error, info, warn};
-use simply_kaspa_cli::cli_args::CliDisable;
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_database::models::types::hash::Hash as SqlHash;
+use spectre_cli::cli_args::CliDisable;
+use spectre_database::client::SpectreDbClient;
+use spectre_database::models::types::hash::Hash as SqlHash;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -35,7 +35,7 @@ pub async fn process_checkpoints(
     run: Arc<AtomicBool>,
     metrics: Arc<RwLock<Metrics>>,
     checkpoint_queue: Arc<ArrayQueue<CheckpointBlock>>,
-    database: KaspaDbClient,
+    database: SpectreDbClient,
 ) {
     let disable_virtual_chain_processing = settings.cli_args.is_disabled(CliDisable::VirtualChainProcessing);
     let disable_transaction_processing = settings.cli_args.is_disabled(CliDisable::TransactionProcessing);

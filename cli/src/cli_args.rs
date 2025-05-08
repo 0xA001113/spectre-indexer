@@ -85,14 +85,14 @@ pub enum CliField {
 }
 
 #[derive(Parser, Clone, Debug, ToSchema, Serialize, Deserialize)]
-#[command(name = "simply-kaspa-indexer", version = env!("VERGEN_GIT_DESCRIBE"))]
+#[command(name = "spectre-indexer", version = env!("VERGEN_GIT_DESCRIBE"))]
 #[serde(rename_all = "camelCase")]
 pub struct CliArgs {
-    #[clap(short = 's', long, help = "RPC url to a kaspad instance, e.g 'ws://localhost:17110'. Leave empty to use the Kaspa PNN")]
+    #[clap(short = 's', long, help = "RPC url to a spectred instance, e.g 'ws://localhost:19110'. Leave empty to use the Spectre PNN")]
     pub rpc_url: Option<String>,
-    #[clap(short = 'p', long, help = "P2P socket address to a kaspad instance, e.g 'localhost:16111'.")]
+    #[clap(short = 'p', long, help = "P2P socket address to a spectred instance, e.g 'localhost:18111'.")]
     pub p2p_url: Option<String>,
-    #[clap(short, long, default_value = "mainnet", help = "The network type and suffix, e.g. 'testnet-11'")]
+    #[clap(short, long, default_value = "mainnet", help = "The network type and suffix, e.g. 'testnet-8'")]
     pub network: String,
     #[clap(short, long, default_value = "postgres://postgres:postgres@localhost:5432/postgres", help = "PostgreSQL url")]
     pub database_url: String,

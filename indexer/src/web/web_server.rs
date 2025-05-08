@@ -9,8 +9,8 @@ use axum::response::Response;
 use axum::{middleware, routing::get, Extension, Router};
 use deadpool::managed::{Object, Pool};
 use log::{info, trace, Level};
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_kaspad::pool::manager::KaspadManager;
+use spectre_database::client::SpectreDbClient;
+use spectre_spectred::pool::manager::SpectredManager;
 use std::io::Error;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -31,8 +31,8 @@ pub const INFO_TAG: &str = "info";
 #[derive(OpenApi)]
 #[openapi(
     info(
-        title = "Simply Kaspa Indexer REST API",
-        license(name = "LICENSE", url = "https://github.com/supertypo/simply-kaspa-indexer"),
+        title = "Spectre Indexer REST API",
+        license(name = "LICENSE", url = "https://github.com/spectre-project/spectre-indexer"),
     ),
     paths(
         endpoint::health::get_health,
@@ -48,8 +48,8 @@ pub struct WebServer {
     settings: Settings,
     run: Arc<AtomicBool>,
     metrics: Arc<RwLock<Metrics>>,
-    kaspad_pool: Pool<KaspadManager, Object<KaspadManager>>,
-    database_client: KaspaDbClient,
+    spectred_pool: Pool<SpectredManager, Object<SpectredManager>>,
+    database_client: SpectreDbClient,
     system: Arc<RwLock<System>>,
 }
 
@@ -58,10 +58,10 @@ impl WebServer {
         settings: Settings,
         run: Arc<AtomicBool>,
         metrics: Arc<RwLock<Metrics>>,
-        kaspad_pool: Pool<KaspadManager, Object<KaspadManager>>,
-        database_client: KaspaDbClient,
+        spectred_pool: Pool<SpectredManager, Object<SpectredManager>>,
+        database_client: SpectreDbClient,
     ) -> Self {
-        WebServer { settings, run, metrics, kaspad_pool, database_client, system: Arc::new(RwLock::new(System::new())) }
+        WebServer { settings, run, metrics, spectred_pool, database_client, system: Arc::new(RwLock::new(System::new())) }
     }
 
     pub async fn run(self: Arc<Self>) -> Result<(), Error> {
@@ -83,7 +83,7 @@ impl WebServer {
             .layer(middleware::from_fn(add_default_cache_control))
             .layer(middleware::from_fn(log_requests))
             .layer(middleware::from_fn(log_responses))
-            .layer(Extension(self.kaspad_pool.clone()))
+            .layer(Extension(self.spectred_pool.clone()))
             .layer(Extension(self.database_client.clone()))
             .layer(Extension(self.metrics.clone()))
             .layer(Extension(self.system.clone()));

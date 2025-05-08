@@ -1,8 +1,8 @@
-use kaspa_rpc_core::RpcBlock;
+use spectre_rpc_core::RpcBlock;
 
-use simply_kaspa_database::models::block::Block as SqlBlock;
-use simply_kaspa_database::models::block_parent::BlockParent as SqlBlockParent;
-use simply_kaspa_database::models::types::hash::Hash as SqlHash;
+use spectre_database::models::block::Block as SqlBlock;
+use spectre_database::models::block_parent::BlockParent as SqlBlockParent;
+use spectre_database::models::types::hash::Hash as SqlHash;
 
 pub fn map_block(
     block: &RpcBlock,

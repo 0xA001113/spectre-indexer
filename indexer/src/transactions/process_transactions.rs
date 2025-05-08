@@ -3,19 +3,19 @@ use crate::checkpoint::{CheckpointBlock, CheckpointOrigin};
 use crate::settings::Settings;
 use crate::web::model::metrics::Metrics;
 use crossbeam_queue::ArrayQueue;
-use kaspa_hashes::Hash as KaspaHash;
+use spectre_hashes::Hash as SpectreHash;
 use log::{debug, info, trace, warn};
 use moka::sync::Cache;
-use simply_kaspa_cli::cli_args::{CliDisable, CliEnable, CliField};
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_database::models::address_transaction::AddressTransaction;
-use simply_kaspa_database::models::block_transaction::BlockTransaction;
-use simply_kaspa_database::models::script_transaction::ScriptTransaction;
-use simply_kaspa_database::models::transaction::Transaction;
-use simply_kaspa_database::models::transaction_input::TransactionInput;
-use simply_kaspa_database::models::transaction_output::TransactionOutput;
-use simply_kaspa_database::models::types::hash::Hash as SqlHash;
-use simply_kaspa_mapping::mapper::KaspaDbMapper;
+use spectre_cli::cli_args::{CliDisable, CliEnable, CliField};
+use spectre_database::client::SpectreDbClient;
+use spectre_database::models::address_transaction::AddressTransaction;
+use spectre_database::models::block_transaction::BlockTransaction;
+use spectre_database::models::script_transaction::ScriptTransaction;
+use spectre_database::models::transaction::Transaction;
+use spectre_database::models::transaction_input::TransactionInput;
+use spectre_database::models::transaction_output::TransactionOutput;
+use spectre_database::models::types::hash::Hash as SqlHash;
+use spectre_mapping::mapper::SpectreDbMapper;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -33,12 +33,12 @@ pub async fn process_transactions(
     metrics: Arc<RwLock<Metrics>>,
     txs_queue: Arc<ArrayQueue<TransactionData>>,
     checkpoint_queue: Arc<ArrayQueue<CheckpointBlock>>,
-    database: KaspaDbClient,
-    mapper: KaspaDbMapper,
+    database: SpectreDbClient,
+    mapper: SpectreDbMapper,
 ) {
     let ttl = settings.cli_args.cache_ttl;
     let cache_size = settings.net_tps_max as u64 * ttl * 2;
-    let tx_id_cache: Cache<KaspaHash, ()> = Cache::builder().time_to_live(Duration::from_secs(ttl)).max_capacity(cache_size).build();
+    let tx_id_cache: Cache<SpectreHash, ()> = Cache::builder().time_to_live(Duration::from_secs(ttl)).max_capacity(cache_size).build();
 
     let batch_scale = settings.cli_args.batch_scale;
     let batch_size = (5000f64 * batch_scale) as usize;
@@ -234,7 +234,7 @@ pub async fn process_transactions(
     }
 }
 
-async fn insert_txs(batch_scale: f64, values: Vec<Transaction>, database: KaspaDbClient) -> u64 {
+async fn insert_txs(batch_scale: f64, values: Vec<Transaction>, database: SpectreDbClient) -> u64 {
     let batch_size = min((250f64 * batch_scale) as u16, 8000) as usize; // 2^16 / fields
     let key = "transactions";
     let start_time = Instant::now();
@@ -251,7 +251,7 @@ async fn insert_tx_inputs(
     batch_scale: f64,
     resolve_previous_outpoints: bool,
     values: Vec<TransactionInput>,
-    database: KaspaDbClient,
+    database: SpectreDbClient,
 ) -> u64 {
     let batch_size = min((250f64 * batch_scale) as u16, 8000) as usize; // 2^16 / fields
     let key = "transaction_inputs";
@@ -268,7 +268,7 @@ async fn insert_tx_inputs(
     rows_affected
 }
 
-async fn insert_tx_outputs(batch_scale: f64, values: Vec<TransactionOutput>, database: KaspaDbClient) -> u64 {
+async fn insert_tx_outputs(batch_scale: f64, values: Vec<TransactionOutput>, database: SpectreDbClient) -> u64 {
     let batch_size = min((250f64 * batch_scale) as u16, 10000) as usize; // 2^16 / fields
     let key = "transactions_outputs";
     let start_time = Instant::now();
@@ -282,7 +282,7 @@ async fn insert_tx_outputs(batch_scale: f64, values: Vec<TransactionOutput>, dat
     rows_affected
 }
 
-async fn insert_input_tx_addr(batch_scale: f64, use_tx: bool, values: Vec<SqlHash>, database: KaspaDbClient) -> u64 {
+async fn insert_input_tx_addr(batch_scale: f64, use_tx: bool, values: Vec<SqlHash>, database: SpectreDbClient) -> u64 {
     let batch_size = min((100f64 * batch_scale) as u16, 8000) as usize;
     let key = "input addresses_transactions";
     let start_time = Instant::now();
@@ -298,7 +298,7 @@ async fn insert_input_tx_addr(batch_scale: f64, use_tx: bool, values: Vec<SqlHas
     rows_affected
 }
 
-async fn insert_input_tx_script(batch_scale: f64, use_tx: bool, values: Vec<SqlHash>, database: KaspaDbClient) -> u64 {
+async fn insert_input_tx_script(batch_scale: f64, use_tx: bool, values: Vec<SqlHash>, database: SpectreDbClient) -> u64 {
     let batch_size = min((100f64 * batch_scale) as u16, 8000) as usize;
     let key = "input scripts_transactions";
     let start_time = Instant::now();
@@ -314,7 +314,7 @@ async fn insert_input_tx_script(batch_scale: f64, use_tx: bool, values: Vec<SqlH
     rows_affected
 }
 
-async fn insert_output_tx_addr(batch_scale: f64, values: Vec<AddressTransaction>, database: KaspaDbClient) -> u64 {
+async fn insert_output_tx_addr(batch_scale: f64, values: Vec<AddressTransaction>, database: SpectreDbClient) -> u64 {
     let batch_size = min((250f64 * batch_scale) as u16, 20000) as usize; // 2^16 / fields
     let key = "output addresses_transactions";
     let start_time = Instant::now();
@@ -328,7 +328,7 @@ async fn insert_output_tx_addr(batch_scale: f64, values: Vec<AddressTransaction>
     rows_affected
 }
 
-async fn insert_output_tx_script(batch_scale: f64, values: Vec<ScriptTransaction>, database: KaspaDbClient) -> u64 {
+async fn insert_output_tx_script(batch_scale: f64, values: Vec<ScriptTransaction>, database: SpectreDbClient) -> u64 {
     let batch_size = min((250f64 * batch_scale) as u16, 20000) as usize; // 2^16 / fields
     let key = "output scripts_transactions";
     let start_time = Instant::now();
@@ -342,7 +342,7 @@ async fn insert_output_tx_script(batch_scale: f64, values: Vec<ScriptTransaction
     rows_affected
 }
 
-async fn insert_block_txs(batch_scale: f64, values: Vec<BlockTransaction>, database: KaspaDbClient) -> u64 {
+async fn insert_block_txs(batch_scale: f64, values: Vec<BlockTransaction>, database: SpectreDbClient) -> u64 {
     let batch_size = min((500f64 * batch_scale) as u16, 30000) as usize; // 2^16 / fields
     let key = "block/transaction mappings";
     let start_time = Instant::now();

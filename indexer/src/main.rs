@@ -2,25 +2,25 @@ use clap::Parser;
 use crossbeam_queue::ArrayQueue;
 use deadpool::managed::{Object, Pool};
 use futures_util::future::try_join_all;
-use kaspa_hashes::Hash as KaspaHash;
-use kaspa_rpc_core::api::rpc::RpcApi;
-use kaspa_wrpc_client::prelude::{NetworkId, NetworkType};
+use spectre_hashes::Hash as SpectreHash;
+use spectre_rpc_core::api::rpc::RpcApi;
+use spectre_wrpc_client::prelude::{NetworkId, NetworkType};
 use log::{info, trace, warn};
-use simply_kaspa_cli::cli_args::{CliArgs, CliDisable, CliEnable};
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_indexer::blocks::fetch_blocks::KaspaBlocksFetcher;
-use simply_kaspa_indexer::blocks::process_blocks::process_blocks;
-use simply_kaspa_indexer::checkpoint::{process_checkpoints, CheckpointBlock, CheckpointOrigin};
-use simply_kaspa_indexer::settings::Settings;
-use simply_kaspa_indexer::signal::signal_handler::notify_on_signals;
-use simply_kaspa_indexer::transactions::process_transactions::process_transactions;
-use simply_kaspa_indexer::utxo_import::utxo_set_importer::UtxoSetImporter;
-use simply_kaspa_indexer::vars::load_block_checkpoint;
-use simply_kaspa_indexer::virtual_chain::process_virtual_chain::process_virtual_chain;
-use simply_kaspa_indexer::web::model::metrics::Metrics;
-use simply_kaspa_indexer::web::web_server::WebServer;
-use simply_kaspa_kaspad::pool::manager::KaspadManager;
-use simply_kaspa_mapping::mapper::KaspaDbMapper;
+use spectre_cli::cli_args::{CliArgs, CliDisable, CliEnable};
+use spectre_database::client::SpectreDbClient;
+use spectre_indexer::blocks::fetch_blocks::SpectreBlocksFetcher;
+use spectre_indexer::blocks::process_blocks::process_blocks;
+use spectre_indexer::checkpoint::{process_checkpoints, CheckpointBlock, CheckpointOrigin};
+use spectre_indexer::settings::Settings;
+use spectre_indexer::signal::signal_handler::notify_on_signals;
+use spectre_indexer::transactions::process_transactions::process_transactions;
+use spectre_indexer::utxo_import::utxo_set_importer::UtxoSetImporter;
+use spectre_indexer::vars::load_block_checkpoint;
+use spectre_indexer::virtual_chain::process_virtual_chain::process_virtual_chain;
+use spectre_indexer::web::model::metrics::Metrics;
+use spectre_indexer::web::web_server::WebServer;
+use spectre_spectred::pool::manager::SpectredManager;
+use spectre_mapping::mapper::SpectreDbMapper;
 use std::env;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -33,9 +33,9 @@ use tokio::task;
 async fn main() {
     println!();
     println!("**************************************************************");
-    println!("******************** Simply Kaspa Indexer ********************");
+    println!("*********************** Spectre Indexer **********************");
     println!("--------------------------------------------------------------");
-    println!("----- https://github.com/supertypo/simply-kaspa-indexer/ -----");
+    println!("----- https://github.com/spectre-project/spectre-indexer -----");
     println!("--------------------------------------------------------------");
     let cli_args = CliArgs::parse();
 
@@ -50,10 +50,10 @@ async fn main() {
     info!("{} {}", env!("CARGO_PKG_NAME"), cli_args.version());
 
     let network_id = NetworkId::from_str(&cli_args.network).unwrap();
-    let kaspad_manager = KaspadManager { network_id, rpc_url: cli_args.rpc_url.clone() };
-    let kaspad_pool: Pool<KaspadManager> = Pool::builder(kaspad_manager).max_size(10).build().unwrap();
+    let spectred_manager = SpectredManager { network_id, rpc_url: cli_args.rpc_url.clone() };
+    let spectred_pool: Pool<SpectredManager> = Pool::builder(spectred_manager).max_size(10).build().unwrap();
 
-    let database = KaspaDbClient::new(&cli_args.database_url).await.expect("Database connection FAILED");
+    let database = SpectreDbClient::new(&cli_args.database_url).await.expect("Database connection FAILED");
 
     if cli_args.initialize_db {
         info!("Initializing database");
@@ -61,17 +61,17 @@ async fn main() {
     }
     database.create_schema(cli_args.upgrade_db).await.expect("Unable to create schema");
 
-    start_processing(cli_args, kaspad_pool, database).await;
+    start_processing(cli_args, spectred_pool, database).await;
 }
 
-async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Object<KaspadManager>>, database: KaspaDbClient) {
+async fn start_processing(cli_args: CliArgs, spectred_pool: Pool<SpectredManager, Object<SpectredManager>>, database: SpectreDbClient) {
     let run = Arc::new(AtomicBool::new(true));
     task::spawn(notify_on_signals(run.clone()));
 
     let mut block_dag_info = None;
     while block_dag_info.is_none() {
-        if let Ok(kaspad) = kaspad_pool.get().await {
-            if let Ok(bdi) = kaspad.get_block_dag_info().await {
+        if let Ok(spectred) = spectred_pool.get().await {
+            if let Ok(bdi) = spectred.get_block_dag_info().await {
                 block_dag_info = Some(bdi);
             }
         }
@@ -107,7 +107,7 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
     }
 
     let mut utxo_set_import = cli_args.is_enabled(CliEnable::ForceUtxoImport);
-    let checkpoint: KaspaHash;
+    let checkpoint: SpectreHash;
     if let Some(ignore_checkpoint) = cli_args.ignore_checkpoint.clone() {
         warn!("Checkpoint ignored due to user request (-i). This might lead to inconsistencies.");
         if ignore_checkpoint == "p" {
@@ -117,11 +117,11 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
             checkpoint = *block_dag_info.virtual_parent_hashes.first().expect("Virtual parent not found");
             info!("Starting from virtual_parent {}", checkpoint);
         } else {
-            checkpoint = KaspaHash::from_str(ignore_checkpoint.as_str()).expect("Supplied block hash is invalid");
+            checkpoint = SpectreHash::from_str(ignore_checkpoint.as_str()).expect("Supplied block hash is invalid");
             info!("Starting from user supplied block {}", checkpoint);
         }
     } else if let Ok(saved_block_checkpoint) = load_block_checkpoint(&database).await {
-        checkpoint = KaspaHash::from_str(saved_block_checkpoint.as_str()).expect("Saved checkpoint is invalid!");
+        checkpoint = SpectreHash::from_str(saved_block_checkpoint.as_str()).expect("Saved checkpoint is invalid!");
         info!("Starting from checkpoint {}", checkpoint);
     } else {
         if cli_args.is_disabled(CliDisable::InitialUtxoImport) {
@@ -134,7 +134,7 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
         }
     }
 
-    let checkpoint_block = match kaspad_pool.get().await.unwrap().get_block(checkpoint, false).await {
+    let checkpoint_block = match spectred_pool.get().await.unwrap().get_block(checkpoint, false).await {
         Ok(block) => Some(CheckpointBlock {
             origin: CheckpointOrigin::Initial,
             hash: block.header.hash.into(),
@@ -152,7 +152,7 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
     let txs_queue = Arc::new(ArrayQueue::new(queue_capacity));
     let checkpoint_queue = Arc::new(ArrayQueue::new(30000));
 
-    let mapper = KaspaDbMapper::new(cli_args.clone());
+    let mapper = SpectreDbMapper::new(cli_args.clone());
 
     let settings = Settings { cli_args: cli_args.clone(), net_bps, net_tps_max, checkpoint, disable_vcp_wait_for_sync };
     let start_vcp = Arc::new(AtomicBool::new(false));
@@ -172,7 +172,7 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
     metrics.components.virtual_chain_processor.only_blocks = settings.cli_args.is_disabled(CliDisable::TransactionAcceptance);
     let metrics = Arc::new(RwLock::new(metrics));
 
-    let webserver = Arc::new(WebServer::new(settings.clone(), run.clone(), metrics.clone(), kaspad_pool.clone(), database.clone()));
+    let webserver = Arc::new(WebServer::new(settings.clone(), run.clone(), metrics.clone(), spectred_pool.clone(), database.clone()));
     let webserver_task = task::spawn(async move { webserver.run().await.unwrap() });
 
     if utxo_set_import {
@@ -185,11 +185,11 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
         }
     }
 
-    let mut block_fetcher = KaspaBlocksFetcher::new(
+    let mut block_fetcher = SpectreBlocksFetcher::new(
         settings.clone(),
         run.clone(),
         metrics.clone(),
-        kaspad_pool.clone(),
+        spectred_pool.clone(),
         blocks_queue.clone(),
         txs_queue.clone(),
     );
@@ -227,7 +227,7 @@ async fn start_processing(cli_args: CliArgs, kaspad_pool: Pool<KaspadManager, Ob
             metrics.clone(),
             start_vcp.clone(),
             checkpoint_queue.clone(),
-            kaspad_pool.clone(),
+            spectred_pool.clone(),
             database.clone(),
         )))
     }

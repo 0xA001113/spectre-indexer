@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use bytesize::ByteSize;
 use log::warn;
-use simply_kaspa_database::client::KaspaDbClient;
+use spectre_database::client::SpectreDbClient;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{fs, process};
@@ -26,12 +26,12 @@ pub const PATH: &str = "/api/metrics";
 pub async fn get_metrics(
     Extension(metrics): Extension<Arc<RwLock<Metrics>>>,
     Extension(system): Extension<Arc<RwLock<System>>>,
-    Extension(database_client): Extension<KaspaDbClient>,
+    Extension(database_client): Extension<SpectreDbClient>,
 ) -> impl IntoResponse {
     Json(update_metrics(metrics, system, database_client).await)
 }
 
-pub async fn update_metrics(metrics: Arc<RwLock<Metrics>>, system: Arc<RwLock<System>>, database_client: KaspaDbClient) -> Metrics {
+pub async fn update_metrics(metrics: Arc<RwLock<Metrics>>, system: Arc<RwLock<System>>, database_client: SpectreDbClient) -> Metrics {
     let mut metrics = metrics.write().await;
     let mut system = system.write().await;
     let pid = Pid::from_u32(process::id());

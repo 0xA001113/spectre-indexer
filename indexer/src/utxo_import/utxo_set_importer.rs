@@ -1,25 +1,25 @@
 use crate::utxo_import::p2p_initializer::P2pInitializer;
 use crate::web::model::metrics::Metrics;
 use bigdecimal::ToPrimitive;
-use kaspa_addresses::Prefix;
-use kaspa_consensus_core::config::params::{MAINNET_PARAMS, TESTNET_PARAMS};
-use kaspa_consensus_core::tx::ScriptPublicKey;
-use kaspa_hashes::Hash as KaspaHash;
-use kaspa_p2p_lib::common::ProtocolError;
-use kaspa_p2p_lib::pb::kaspad_message::Payload;
-use kaspa_p2p_lib::pb::{
-    AddressesMessage, KaspadMessage, OutpointAndUtxoEntryPair, PongMessage, RequestNextPruningPointUtxoSetChunkMessage,
+use spectre_addresses::Prefix;
+use spectre_consensus_core::config::params::{MAINNET_PARAMS, TESTNET_PARAMS};
+use spectre_consensus_core::tx::ScriptPublicKey;
+use spectre_hashes::Hash as SpectreHash;
+use spectre_p2p_lib::common::ProtocolError;
+use spectre_p2p_lib::pb::spectred_message::Payload;
+use spectre_p2p_lib::pb::{
+    AddressesMessage, SpectredMessage, OutpointAndUtxoEntryPair, PongMessage, RequestNextPruningPointUtxoSetChunkMessage,
     RequestPruningPointUtxoSetMessage,
 };
-use kaspa_p2p_lib::{make_message, Adaptor, Hub, PeerKey};
-use kaspa_txscript::extract_script_pub_key_address;
-use kaspa_wrpc_client::prelude::{NetworkId, NetworkType};
+use spectre_p2p_lib::{make_message, Adaptor, Hub, PeerKey};
+use spectre_txscript::extract_script_pub_key_address;
+use spectre_wrpc_client::prelude::{NetworkId, NetworkType};
 use log::{debug, error, info, trace, warn};
 use rand::prelude::IndexedRandom;
 use rand::rng;
-use simply_kaspa_cli::cli_args::{CliArgs, CliField};
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_database::models::transaction_output::TransactionOutput;
+use spectre_cli::cli_args::{CliArgs, CliField};
+use spectre_database::client::SpectreDbClient;
+use spectre_database::models::transaction_output::TransactionOutput;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -37,8 +37,8 @@ pub struct UtxoSetImporter {
     cli_args: CliArgs,
     run: Arc<AtomicBool>,
     metrics: Arc<RwLock<Metrics>>,
-    pruning_point_hash: KaspaHash,
-    database: KaspaDbClient,
+    pruning_point_hash: SpectreHash,
+    database: SpectreDbClient,
     network_id: NetworkId,
     prefix: Prefix,
     include_amount: bool,
@@ -52,8 +52,8 @@ impl UtxoSetImporter {
         cli_args: CliArgs,
         run: Arc<AtomicBool>,
         metrics: Arc<RwLock<Metrics>>,
-        pruning_point_hash: KaspaHash,
-        database: KaspaDbClient,
+        pruning_point_hash: SpectreHash,
+        database: SpectreDbClient,
     ) -> UtxoSetImporter {
         let network_id = NetworkId::from_str(&cli_args.network).unwrap();
         let prefix = Prefix::from(network_id);
@@ -85,7 +85,7 @@ impl UtxoSetImporter {
             } else {
                 let params = match self.network_id {
                     NetworkId { network_type: NetworkType::Mainnet, suffix: None } => Some(MAINNET_PARAMS),
-                    NetworkId { network_type: NetworkType::Testnet, suffix: Some(10) } => Some(TESTNET_PARAMS),
+                    NetworkId { network_type: NetworkType::Testnet, suffix: Some(8) } => Some(TESTNET_PARAMS),
                     _ => None,
                 };
                 if let Some(params) = params {
@@ -136,8 +136,8 @@ impl UtxoSetImporter {
         &self,
         adaptor: Arc<Adaptor>,
         peer_key: PeerKey,
-        pruning_point_hash: KaspaHash,
-        mut receiver: Receiver<KaspadMessage>,
+        pruning_point_hash: SpectreHash,
+        mut receiver: Receiver<SpectredMessage>,
     ) -> Result<(), ProtocolError> {
         let mut outputs_committed_count = 0;
         let mut utxo_chunk_count = 0;
@@ -224,7 +224,7 @@ impl UtxoSetImporter {
                 let utxo_entry = u.utxo_entry.unwrap();
                 let script_public_key: ScriptPublicKey = utxo_entry.script_public_key.unwrap().try_into().unwrap();
                 TransactionOutput {
-                    transaction_id: KaspaHash::from_slice(outpoint.transaction_id.unwrap().bytes.as_slice()).into(),
+                    transaction_id: SpectreHash::from_slice(outpoint.transaction_id.unwrap().bytes.as_slice()).into(),
                     index: outpoint.index.to_i16().unwrap(),
                     amount: self.include_amount.then_some(utxo_entry.amount as i64),
                     script_public_key: self.include_script_public_key.then_some(script_public_key.script().to_vec()),

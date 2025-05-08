@@ -1,5 +1,5 @@
 use crate::web::endpoint::metrics::update_metrics;
-use crate::web::model::health::{Health, HealthIndexer, HealthIndexerDetails, HealthIndexerInfo, HealthKaspad, HealthStatus};
+use crate::web::model::health::{Health, HealthIndexer, HealthIndexerDetails, HealthIndexerInfo, HealthSpectred, HealthStatus};
 use crate::web::model::metrics::{Metrics, MetricsBlock};
 use crate::web::web_server;
 use axum::http::StatusCode;
@@ -7,9 +7,9 @@ use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use chrono::Utc;
 use deadpool::managed::Pool;
-use kaspa_rpc_core::api::rpc::RpcApi;
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_kaspad::pool::manager::KaspadManager;
+use spectre_rpc_core::api::rpc::RpcApi;
+use spectre_database::client::SpectreDbClient;
+use spectre_spectred::pool::manager::SpectredManager;
 use std::sync::Arc;
 use std::time::Duration;
 use sysinfo::System;
@@ -29,12 +29,12 @@ pub const PATH: &str = "/api/health";
 )]
 pub async fn get_health(
     Extension(metrics): Extension<Arc<RwLock<Metrics>>>,
-    Extension(kaspad_pool): Extension<Pool<KaspadManager>>,
+    Extension(spectred_pool): Extension<Pool<SpectredManager>>,
     Extension(system): Extension<Arc<RwLock<System>>>,
-    Extension(database_client): Extension<KaspaDbClient>,
+    Extension(database_client): Extension<SpectreDbClient>,
 ) -> impl IntoResponse {
-    let health_kaspad: HealthKaspad = match kaspad_pool.get().await {
-        Ok(kaspad_client) => match kaspad_client.get_server_info().await {
+    let health_spectred: HealthSpectred = match spectred_pool.get().await {
+        Ok(spectred_client) => match spectred_client.get_server_info().await {
             Ok(server_info) => server_info.into(),
             Err(e) => (HealthStatus::DOWN, e.to_string()).into(),
         },
@@ -42,14 +42,14 @@ pub async fn get_health(
     };
     let metrics = update_metrics(metrics, system, database_client).await;
 
-    let health_indexer = indexer_health(metrics, health_kaspad.virtual_daa_score).await;
+    let health_indexer = indexer_health(metrics, health_spectred.virtual_daa_score).await;
 
     let mut status = health_indexer.status.clone();
-    if health_kaspad.status == HealthStatus::DOWN {
+    if health_spectred.status == HealthStatus::DOWN {
         status = HealthStatus::DOWN;
     }
 
-    let health = Health { status, last_updated: Utc::now().timestamp_millis() as u64, indexer: health_indexer, kaspad: health_kaspad };
+    let health = Health { status, last_updated: Utc::now().timestamp_millis() as u64, indexer: health_indexer, spectred: health_spectred };
     let status_code = if health.status != HealthStatus::DOWN { StatusCode::OK } else { StatusCode::SERVICE_UNAVAILABLE };
     (status_code, Json(&health)).into_response()
 }

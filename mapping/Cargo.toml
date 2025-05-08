@@ -1,5 +1,5 @@
 [package]
-name = "simply-kaspa-mapping"
+name = "spectre-mapping"
 rust-version.workspace = true
 authors.workspace = true
 license-file.workspace = true
@@ -9,13 +9,13 @@ edition.workspace = true
 default = []
 
 [lib]
-name = "simply_kaspa_mapping"
+name = "spectre_mapping"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-simply-kaspa-cli.workspace = true
-simply-kaspa-database.workspace = true
-kaspa-rpc-core.workspace = true
+spectre-cli.workspace = true
+spectre-database.workspace = true
+spectre-rpc-core.workspace = true
 bigdecimal.workspace = true
 log.workspace = true
 clap.workspace = true

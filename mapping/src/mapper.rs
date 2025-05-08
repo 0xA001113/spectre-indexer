@@ -1,19 +1,19 @@
-use kaspa_rpc_core::{RpcBlock, RpcTransaction};
-use simply_kaspa_cli::cli_args::{CliArgs, CliField};
-use simply_kaspa_database::models::address_transaction::AddressTransaction as SqlAddressTransaction;
-use simply_kaspa_database::models::block::Block as SqlBlock;
-use simply_kaspa_database::models::block_parent::BlockParent as SqlBlockParent;
-use simply_kaspa_database::models::block_transaction::BlockTransaction as SqlBlockTransaction;
-use simply_kaspa_database::models::script_transaction::ScriptTransaction as SqlScriptTransaction;
-use simply_kaspa_database::models::transaction::Transaction as SqlTransaction;
-use simply_kaspa_database::models::transaction_input::TransactionInput as SqlTransactionInput;
-use simply_kaspa_database::models::transaction_output::TransactionOutput as SqlTransactionOutput;
-use simply_kaspa_database::models::types::hash::Hash as SqlHash;
+use spectre_rpc_core::{RpcBlock, RpcTransaction};
+use spectre_cli::cli_args::{CliArgs, CliField};
+use spectre_database::models::address_transaction::AddressTransaction as SqlAddressTransaction;
+use spectre_database::models::block::Block as SqlBlock;
+use spectre_database::models::block_parent::BlockParent as SqlBlockParent;
+use spectre_database::models::block_transaction::BlockTransaction as SqlBlockTransaction;
+use spectre_database::models::script_transaction::ScriptTransaction as SqlScriptTransaction;
+use spectre_database::models::transaction::Transaction as SqlTransaction;
+use spectre_database::models::transaction_input::TransactionInput as SqlTransactionInput;
+use spectre_database::models::transaction_output::TransactionOutput as SqlTransactionOutput;
+use spectre_database::models::types::hash::Hash as SqlHash;
 
 use crate::{blocks, transactions};
 
 #[derive(Clone)]
-pub struct KaspaDbMapper {
+pub struct SpectreDbMapper {
     block_accepted_id_merkle_root: bool,
     block_merge_set_blues_hashes: bool,
     block_merge_set_reds_hashes: bool,
@@ -43,9 +43,9 @@ pub struct KaspaDbMapper {
     tx_out_block_time: bool,
 }
 
-impl KaspaDbMapper {
-    pub fn new(cli_args: CliArgs) -> KaspaDbMapper {
-        KaspaDbMapper {
+impl SpectreDbMapper {
+    pub fn new(cli_args: CliArgs) -> SpectreDbMapper {
+        SpectreDbMapper {
             block_accepted_id_merkle_root: !cli_args.is_excluded(CliField::BlockAcceptedIdMerkleRoot),
             block_merge_set_blues_hashes: !cli_args.is_excluded(CliField::BlockMergeSetBluesHashes),
             block_merge_set_reds_hashes: !cli_args.is_excluded(CliField::BlockMergeSetRedsHashes),

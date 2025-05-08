@@ -1,12 +1,12 @@
 use bigdecimal::ToPrimitive;
-use kaspa_rpc_core::RpcTransaction;
+use spectre_rpc_core::RpcTransaction;
 
-use simply_kaspa_database::models::address_transaction::AddressTransaction as SqlAddressTransaction;
-use simply_kaspa_database::models::block_transaction::BlockTransaction as SqlBlockTransaction;
-use simply_kaspa_database::models::script_transaction::ScriptTransaction as SqlScriptTransaction;
-use simply_kaspa_database::models::transaction::Transaction as SqlTransaction;
-use simply_kaspa_database::models::transaction_input::TransactionInput as SqlTransactionInput;
-use simply_kaspa_database::models::transaction_output::TransactionOutput as SqlTransactionOutput;
+use spectre_database::models::address_transaction::AddressTransaction as SqlAddressTransaction;
+use spectre_database::models::block_transaction::BlockTransaction as SqlBlockTransaction;
+use spectre_database::models::script_transaction::ScriptTransaction as SqlScriptTransaction;
+use spectre_database::models::transaction::Transaction as SqlTransaction;
+use spectre_database::models::transaction_input::TransactionInput as SqlTransactionInput;
+use spectre_database::models::transaction_output::TransactionOutput as SqlTransactionOutput;
 
 pub fn map_transaction(
     subnetwork_key: i32,

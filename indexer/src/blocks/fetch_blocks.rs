@@ -8,14 +8,14 @@ use crate::web::model::metrics::{Metrics, MetricsBlock};
 use chrono::{DateTime, Utc};
 use crossbeam_queue::ArrayQueue;
 use deadpool::managed::{Object, Pool};
-use kaspa_hashes::Hash as KaspaHash;
-use kaspa_rpc_core::api::rpc::RpcApi;
-use kaspa_rpc_core::{RpcBlock, RpcTransaction};
+use spectre_hashes::Hash as SpectreHash;
+use spectre_rpc_core::api::rpc::RpcApi;
+use spectre_rpc_core::{RpcBlock, RpcTransaction};
 use log::{debug, trace, warn};
 use log::{error, info};
 use moka::sync::Cache;
-use simply_kaspa_cli::cli_args::CliDisable;
-use simply_kaspa_kaspad::pool::manager::KaspadManager;
+use spectre_cli::cli_args::CliDisable;
+use spectre_spectred::pool::manager::SpectredManager;
 use tokio::sync::RwLock;
 use tokio::time::sleep;
 
@@ -28,48 +28,48 @@ pub struct BlockData {
 #[derive(Debug)]
 pub struct TransactionData {
     pub transactions: Vec<RpcTransaction>,
-    pub block_hash: KaspaHash,
+    pub block_hash: SpectreHash,
     pub block_timestamp: u64,
     pub block_daa_score: u64,
     pub block_blue_score: u64,
 }
 
-pub struct KaspaBlocksFetcher {
+pub struct SpectreBlocksFetcher {
     disable_transaction_processing: bool,
     run: Arc<AtomicBool>,
     metrics: Arc<RwLock<Metrics>>,
-    kaspad_pool: Pool<KaspadManager, Object<KaspadManager>>,
+    spectred_pool: Pool<SpectredManager, Object<SpectredManager>>,
     blocks_queue: Arc<ArrayQueue<BlockData>>,
     txs_queue: Arc<ArrayQueue<TransactionData>>,
-    low_hash: KaspaHash,
+    low_hash: SpectreHash,
     last_sync_check: Instant,
     synced: bool,
     lag_count: i32,
-    tip_hashes: HashSet<KaspaHash>,
-    block_cache: Cache<KaspaHash, ()>,
+    tip_hashes: HashSet<SpectreHash>,
+    block_cache: Cache<SpectreHash, ()>,
     net_bps: u8,
 }
 
-impl KaspaBlocksFetcher {
+impl SpectreBlocksFetcher {
     const SYNC_CHECK_INTERVAL: Duration = Duration::from_secs(30);
 
     pub fn new(
         settings: Settings,
         run: Arc<AtomicBool>,
         metrics: Arc<RwLock<Metrics>>,
-        kaspad_pool: Pool<KaspadManager, Object<KaspadManager>>,
+        spectred_pool: Pool<SpectredManager, Object<SpectredManager>>,
         blocks_queue: Arc<ArrayQueue<BlockData>>,
         txs_queue: Arc<ArrayQueue<TransactionData>>,
-    ) -> KaspaBlocksFetcher {
+    ) -> SpectreBlocksFetcher {
         let ttl = settings.cli_args.cache_ttl;
         let cache_size = settings.net_bps as u64 * ttl * 2;
-        let block_cache: Cache<KaspaHash, ()> =
+        let block_cache: Cache<SpectreHash, ()> =
             Cache::builder().time_to_live(Duration::from_secs(ttl)).max_capacity(cache_size).build();
-        KaspaBlocksFetcher {
+        SpectreBlocksFetcher {
             disable_transaction_processing: settings.cli_args.is_disabled(CliDisable::TransactionProcessing),
             run,
             metrics,
-            kaspad_pool,
+            spectred_pool,
             blocks_queue,
             txs_queue,
             low_hash: settings.checkpoint,
@@ -93,8 +93,8 @@ impl KaspaBlocksFetcher {
         while self.run.load(Ordering::Relaxed) {
             let last_fetch_time = Instant::now();
             debug!("Getting blocks with low_hash {}", self.low_hash.to_string());
-            match self.kaspad_pool.get().await {
-                Ok(kaspad) => match kaspad.get_blocks(Some(self.low_hash), true, !self.disable_transaction_processing).await {
+            match self.spectred_pool.get().await {
+                Ok(spectred) => match spectred.get_blocks(Some(self.low_hash), true, !self.disable_transaction_processing).await {
                     Ok(response) => {
                         debug!("Received {} blocks", response.blocks.len());
                         trace!("Block hashes: \n{:#?}", response.block_hashes);
@@ -105,7 +105,7 @@ impl KaspaBlocksFetcher {
                             && Instant::now().duration_since(self.last_sync_check) >= Self::SYNC_CHECK_INTERVAL
                         {
                             info!("Getting tip hashes from BlockDagInfo for sync check");
-                            if let Ok(block_dag_info) = kaspad.get_block_dag_info().await {
+                            if let Ok(block_dag_info) = spectred.get_block_dag_info().await {
                                 self.tip_hashes = HashSet::from_iter(block_dag_info.tip_hashes.into_iter());
                                 self.last_sync_check = Instant::now();
                             }
@@ -144,7 +144,7 @@ impl KaspaBlocksFetcher {
                     }
                 },
                 Err(e) => {
-                    error!("Failed getting kaspad connection from pool: {}", e);
+                    error!("Failed getting spectred connection from pool: {}", e);
                     sleep(Duration::from_secs(5)).await
                 }
             }

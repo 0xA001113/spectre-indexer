@@ -1,4 +1,4 @@
-use kaspa_rpc_core::GetServerInfoResponse;
+use spectre_rpc_core::GetServerInfoResponse;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::fmt;
@@ -12,7 +12,7 @@ pub struct Health {
     #[schema(example = "1738706345528")]
     pub last_updated: u64,
     pub indexer: HealthIndexer,
-    pub kaspad: HealthKaspad,
+    pub spectred: HealthSpectred,
 }
 
 #[derive(ToSchema, Clone, Serialize, Deserialize, PartialEq)]
@@ -53,7 +53,7 @@ pub struct HealthIndexerDetails {
 #[skip_serializing_none]
 #[derive(ToSchema, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HealthKaspad {
+pub struct HealthSpectred {
     pub status: HealthStatus,
     #[schema(example = "true")]
     pub is_synced: Option<bool>,
@@ -66,23 +66,23 @@ pub struct HealthKaspad {
     pub error: Option<String>,
 }
 
-impl From<(HealthStatus, String)> for HealthKaspad {
+impl From<(HealthStatus, String)> for HealthSpectred {
     fn from(status_error: (HealthStatus, String)) -> Self {
         let (status, error) = status_error;
-        HealthKaspad { status, server_version: None, network_id: None, virtual_daa_score: None, is_synced: None, error: Some(error) }
+        HealthSpectred { status, server_version: None, network_id: None, virtual_daa_score: None, is_synced: None, error: Some(error) }
     }
 }
 
-impl From<GetServerInfoResponse> for HealthKaspad {
+impl From<GetServerInfoResponse> for HealthSpectred {
     fn from(get_server_info_response: GetServerInfoResponse) -> Self {
         let is_synced = get_server_info_response.is_synced;
-        HealthKaspad {
+        HealthSpectred {
             status: if is_synced { HealthStatus::UP } else { HealthStatus::DOWN },
             is_synced: Some(is_synced),
             server_version: Some(get_server_info_response.server_version),
             network_id: Some(get_server_info_response.network_id.to_string()),
             virtual_daa_score: Some(get_server_info_response.virtual_daa_score),
-            error: if !is_synced { Some("Kaspad is not synced".to_string()) } else { None },
+            error: if !is_synced { Some("Spectred is not synced".to_string()) } else { None },
         }
     }
 }

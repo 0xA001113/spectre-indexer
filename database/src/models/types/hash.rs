@@ -1,13 +1,13 @@
-use kaspa_hashes::Hash as KaspaHash;
+use spectre_hashes::Hash as SpectreHash;
 use sqlx;
 use sqlx::encode::IsNull;
 use sqlx::postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueRef};
 use sqlx::{Decode, Encode, Postgres, Type};
 use std::fmt::{Display, Formatter};
 
-/// Wrapper type for kaspa_hashes::Hash implementing the SQLX Encode & Decode traits
+/// Wrapper type for spectre_hashes::Hash implementing the SQLX Encode & Decode traits
 #[derive(Clone, Eq, PartialEq, Hash)]
-pub struct Hash(KaspaHash);
+pub struct Hash(SpectreHash);
 
 impl Hash {
     pub const fn as_bytes(&self) -> [u8; 32] {
@@ -21,13 +21,13 @@ impl Display for Hash {
     }
 }
 
-impl From<KaspaHash> for Hash {
-    fn from(hash: KaspaHash) -> Self {
+impl From<SpectreHash> for Hash {
+    fn from(hash: SpectreHash) -> Self {
         Hash(hash)
     }
 }
 
-impl From<Hash> for KaspaHash {
+impl From<Hash> for SpectreHash {
     fn from(sql_hash: Hash) -> Self {
         sql_hash.0
     }
@@ -55,7 +55,7 @@ impl Encode<'_, Postgres> for Hash {
 impl<'r> Decode<'r, Postgres> for Hash {
     fn decode(value: PgValueRef<'r>) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let bytes = value.as_bytes()?;
-        let kaspa_hash = KaspaHash::from_slice(bytes);
-        Ok(Hash(kaspa_hash))
+        let spectre_hash = SpectreHash::from_slice(bytes);
+        Ok(Hash(spectre_hash))
     }
 }

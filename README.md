@@ -1,32 +1,48 @@
-# Simply Kaspa Indexer
-A high performance Kaspa PostgreSQL indexer implemented in Rust.  
+# Spectre Indexer
+
+A high performance Spectre PostgreSQL indexer implemented in Rust.
 
 ## About
-The indexer has been implemented from scratch by deriving the functional spec of [kaspa-db-filler](https://github.com/lAmeR1/kaspa-db-filler).  
-As part of this process the database schema was reworked to better support concurrency.  
-This means that databases populated by the lAmeR1/kaspa-db-filler must be migrated to be compatible.  
-A schema migration script has been developed and is available [here](https://github.com/supertypo/kaspa-db-filler-migration).  
-A compatible version of the kaspa-rest-server is available [here](https://github.com/kaspa-ng/kaspa-rest-server).
+
+The indexer has been implemented from scratch by deriving the
+functional spec of [spectre-db-filler](https://github.com/spectre-project/spectre-db-filler).
+As part of this process the database schema was reworked to better
+support concurrency. This means that databases populated by the
+`spectre-db-filler` must be migrated to be compatible. A schema
+migration script has been developed and is available [here](https://github.com/spectre-project/spectre-db-filler-migration).
+A compatible version of the `spectre-rest-server` is available [here](https://github.com/spectre-project/spectre-rest-server-ng).
 
 ## Binary releases
+
 For now, binary releases are built for linux/amd64 and linux/arm64.
 
 ## Important notes
 
 ### Optional tables
-To maximize the performance for your specific needs you should take care to disable any table you don't need through command line flags.  
-See --help for a list of optional fields.
+
+To maximize the performance for your specific needs you should take
+care to disable any table you don't need through command line flags.
+See `--help` for a list of optional fields.
 
 ### Optional fields
-In addition to optional tables, many fields can be left empty if they are not required for your use case.  
-Use exclude-fields arguments to fine tune. See --help for a list of optional fields.
+
+In addition to optional tables, many fields can be left empty if they
+are not required for your use case. Use `exclude-fields` arguments to
+fine tune. See `--help` for a list of optional fields.
 
 ### Index by script instead of address
-If addresses_transactions_table is NOT disabled and exclude-fields contains tx_out_script_public_key_address (and not tx_out_script_public_key),  
-the indexer will use scripts_transactions instead of addresses_transactions for indexing addresses for > 25% space savings.
+
+If `addresses_transactions_table` is NOT disabled and `exclude-fields`
+contains `tx_out_script_public_key_address` (and not
+`tx_out_script_public_key`), the indexer will use `scripts_transactions`
+instead of `addresses_transactions` for indexing addresses for > 25%
+space savings.
 
 ### Postgres tuning
-Make sure to tune Postgres to your specific hardware, here is an example for a server with 12GB RAM and SSD storage:
+
+Make sure to tune Postgres to your specific hardware, here is an
+example for a server with 12GB RAM and SSD storage:
+
 ```
 shared_buffers = 2GB
 work_mem = 128MB
@@ -36,75 +52,104 @@ max_wal_size = 4GB
 min_wal_size = 80MB
 effective_cache_size = 8GB
 ```
-In addition, I highly recommend running Postgres on ZFS with compression=lz4 (or zstd) for space savings as well as for improving performance. Make sure to also set recordsize=16k.
 
-### Tn11 (10bps) note
-The indexer is able to keep up with the 10bps testnet (TN11) under full load (2000+tps) as long as Postgres is running on a sufficiently high-end NVMe.  
-By disabling optional tables and fields you can bring the requirements down if running on lesser hardware.
+In addition, I highly recommend running Postgres on ZFS with
+`compression=lz4` (or `zstd`) for space savings as well as for
+improving performance. Make sure to also set `recordsize=16k`.
+
+### Tn8 (8bps) note
+
+The indexer is able to keep up with the 8bps testnet (TN8) under full
+load (2000+tps) as long as Postgres is running on a sufficiently
+high-end NVMe. By disabling optional tables and fields you can bring
+the requirements down if running on lesser hardware.
 
 ### Historical data
-The indexer will begin collecting data from the point in time when it's started.  
-If you have an archival node, you can specify the start-block using the --ignore_checkpoint argument and specify an older start block.  
-Please make contact with us on the [Kaspa Discord](https://kaspa.org) if you need a pg_dump-file of historical records.
+
+The indexer will begin collecting data from the point in time when it's
+started. If you have an archival node, you can specify the start-block
+using the `--ignore_checkpoint` argument and specify an older start
+block.
 
 # License
-MIT, which means this software can be freely modified to any specific need and redistributed (under certain terms).  
-Please be so kind as to contribute back features you think could be beneficial to the general community.
+
+MIT, which means this software can be freely modified to any specific
+need and redistributed (under certain terms). Please be so kind as to
+contribute back features you think could be beneficial to the general
+community.
 
 ### Contribute to development
-kaspa:qrjtsnnpjyvlmkffdqyayrny3qyen9yjkpuw7xvhsz36n69wmrfdyf3nwv67t
+
+Supertypo: `kaspa:qrjtsnnpjyvlmkffdqyayrny3qyen9yjkpuw7xvhsz36n69wmrfdyf3nwv67t`
+Spectre: `spectre:qrxf48dgrdkjxllxczek3uweuldtan9nanzjsavk0ak9ynwn0zsayjjh7upez`
 
 # Getting started
 
 ## Build and run from source
-These instructions are for Ubuntu 24.04, adjustments might be needed for other distributions (or versions). 
+
+These instructions are for Ubuntu 24.04, adjustments might be needed
+for other distributions (or versions).
 
 ### 1. Install dependencies
+
 ```shell
 sudo apt update && sudo apt install -y git curl build-essential pkg-config libssl-dev
 ```
 
 ### 2. Install Rust
+
 ```shell
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ```
 
 ### 3. Update path
+
 ```shell
 source ~/.bashrc
 ```
 
 ### 4. Clone this repository
+
 ```shell
 git clone <repository-url>
 ```
 
 ### 5. Optionally, switch to a release version
+
 ```shell
 git checkout <version>
 ```
-E.g. git checkout v1.0.1
+
+E.g. `git checkout v1.0.1`
 
 ### 6. Build workspace
+
 ```shell
 cargo build
 ```
 
 ### 7. Run indexer
+
 ```shell
-cargo run -- -s ws://<kaspad_host>:17110 -d postgres://postgres:postgres@<postgres_host>:5432
+cargo run -- -s ws://<spectred_host>:19110 -d postgres://postgres:postgres@<postgres_host>:5432
 ```
 
 ## API
-There is a simple api available at http://localhost:8500/api (by default), it currently provides the following endpoints:
+
+There is a simple api available at http://localhost:8500/api (by
+default), it currently provides the following endpoints:
+
 - health
 - metrics
 
 ## Configuration examples
 
 ### Minimal configuration
-The default is well suited for a block explorers and the like, which is overkill for most other use cases.   
-This is the recommended starting point for exchanges and other 'light' integrators:
+
+The default is well suited for a block explorers and the like, which
+is overkill for most other use cases. This is the recommended starting
+point for exchanges and other 'light' integrators:
+
 ```
 disable:
     block_parent_table,
@@ -135,12 +180,19 @@ exclude-fields:
 ```
 
 ### Enable transactions_inputs_resolve
-Having the indexer resolve inputs at index time allows avoiding the expensive join at query time. In essence this load is moved to the indexer, 
-except if you also choose to use it to resolve addresses by dropping the addresses_transactions table and querying inputs and outputs directly,
-in this case the added effort is zero or even negative. To enable add the argument: --enable=transactions_inputs_resolve.  
-  
-If you want to have the indexer pre-resolve inputs but already have existing data in the db, you have to manually pre-resolve existing inputs first. 
-Make sure the indexer is stopped and apply the following SQL:
+
+Having the indexer resolve inputs at index time allows avoiding the
+expensive join at query time. In essence this load is moved to the
+indexer, except if you also choose to use it to resolve addresses by
+dropping the `addresses_transactions` table and querying inputs and
+outputs directly, in this case the added effort is zero or even
+negative. To enable add the argument: `--enable=transactions_inputs_resolve`.
+
+If you want to have the indexer pre-resolve inputs but already have
+existing data in the db, you have to manually pre-resolve existing
+inputs first. Make sure the indexer is stopped and apply the following
+SQL:
+
 ```sql
 CREATE TABLE transactions_inputs_resolved AS
 SELECT
@@ -163,13 +215,21 @@ ALTER TABLE transactions_inputs_resolved RENAME TO transactions_inputs;
 ALTER TABLE transactions_inputs ADD PRIMARY KEY (transaction_id, index);
 ANALYZE transactions_inputs;
 ```
-If you are using kaspa-rest-server you can apply the PREV_OUT_RESOLVED=true env var afterward to disable the expensive join for resolve_previous_outpoints=light queries.
+
+If you are using `spectre-rest-server` you can apply the
+`PREV_OUT_RESOLVED=true` env var afterward to disable the expensive
+join for `resolve_previous_outpoints=light` queries.
 
 ### Address to transaction mapping without separate table
-When --enable=transactions_inputs_resolve is specified (see above), you can look up transactions without a separate mapping table.  
-  
-First make sure the filler is running without exclude on tx_in_block_time and tx_out_block_time.  
-If the db already contains inputs and/or outputs without block_time you will have to populate the column manually:
+
+When `--enable=transactions_inputs_resolve` is specified (see above),
+you can look up transactions without a separate mapping table.
+
+First make sure the filler is running without exclude on
+`tx_in_block_time` and `tx_out_block_time`. If the db already contains
+inputs and/or outputs without `block_time` you will have to populate
+the column manually:
+
 ```sql
 CREATE TABLE transactions_inputs_with_block_time AS
 SELECT
@@ -190,28 +250,35 @@ ALTER TABLE transactions_inputs_with_block_time RENAME TO transactions_inputs;
 ALTER TABLE transactions_inputs ADD PRIMARY KEY (transaction_id, index);
 ANALYZE transactions_inputs;
 ```
-Then use the same method to enrich transactions_outputs with block_time from transactions.  
+
+Then use the same method to enrich `transactions_outputs` with
+`block_time` from transactions.
 
 Lastly the appropriate indexes for efficient querying must be created:
+
 ```sql
 CREATE INDEX ON transactions_inputs (previous_outpoint_script, block_time DESC);
 CREATE INDEX ON transactions_outputs (script_public_key, block_time DESC);
 ```
-Afterward truncate the addresses_transactions/scripts_transactions table, apply --disable=addresses_transactions_table to the indexer and start it.
+
+Afterward truncate the `addresses_transactions`/`scripts_transactions`
+table, apply `--disable=addresses_transactions_table` to the indexer
+and start it.
 
 ## Help
+
 ```
-Usage: simply-kaspa-indexer [OPTIONS]
+Usage: spectre-indexer [OPTIONS]
 
 Options:
   -s, --rpc-url <RPC_URL>
-          RPC url to a kaspad instance, e.g 'ws://localhost:17110'. Leave empty to use the Kaspa PNN
+          RPC url to a spectred instance, e.g 'ws://localhost:19110'. Leave empty to use the Spectre PNN
 
   -p, --p2p-url <P2P_URL>
-          P2P socket address to a kaspad instance, e.g 'localhost:16111'.
+          P2P socket address to a spectred instance, e.g 'localhost:18111'.
 
   -n, --network <NETWORK>
-          The network type and suffix, e.g. 'testnet-11'
+          The network type and suffix, e.g. 'testnet-8'
           
           [default: mainnet]
 

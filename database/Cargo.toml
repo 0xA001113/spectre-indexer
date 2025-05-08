@@ -1,5 +1,5 @@
 [package]
-name = "simply-kaspa-database"
+name = "spectre-database"
 rust-version.workspace = true
 authors.workspace = true
 license-file.workspace = true
@@ -9,11 +9,11 @@ edition.workspace = true
 default = []
 
 [lib]
-name = "simply_kaspa_database"
+name = "spectre_database"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-kaspa-hashes.workspace = true
+spectre-hashes.workspace = true
 sqlx.workspace = true
 itertools.workspace = true
 regex.workspace = true

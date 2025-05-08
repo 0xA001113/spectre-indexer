@@ -1,5 +1,5 @@
 [package]
-name = "simply-kaspa-cli"
+name = "spectre-cli"
 rust-version.workspace = true
 authors.workspace = true
 license-file.workspace = true
@@ -10,7 +10,7 @@ build = "build.rs"
 default = []
 
 [lib]
-name = "simply_kaspa_cli"
+name = "spectre_cli"
 crate-type = ["cdylib", "lib"]
 
 [build-dependencies]

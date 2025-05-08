@@ -1,14 +1,14 @@
 use std::cmp::min;
 
-use kaspa_rpc_core::RpcAcceptedTransactionIds;
+use spectre_rpc_core::RpcAcceptedTransactionIds;
 use log::{debug, trace};
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_database::models::transaction_acceptance::TransactionAcceptance;
+use spectre_database::client::SpectreDbClient;
+use spectre_database::models::transaction_acceptance::TransactionAcceptance;
 
 pub async fn accept_transactions(
     batch_scale: f64,
     accepted_transaction_ids: &[RpcAcceptedTransactionIds],
-    database: &KaspaDbClient,
+    database: &SpectreDbClient,
 ) -> u64 {
     let batch_size = min((500f64 * batch_scale) as usize, 7500);
     if log::log_enabled!(log::Level::Debug) {

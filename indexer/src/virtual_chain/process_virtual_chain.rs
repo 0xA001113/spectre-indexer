@@ -7,11 +7,11 @@ use crate::web::model::metrics::Metrics;
 use chrono::DateTime;
 use crossbeam_queue::ArrayQueue;
 use deadpool::managed::{Object, Pool};
-use kaspa_rpc_core::api::rpc::RpcApi;
+use spectre_rpc_core::api::rpc::RpcApi;
 use log::{debug, error, info, warn};
-use simply_kaspa_cli::cli_args::{CliDisable, CliEnable};
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_kaspad::pool::manager::KaspadManager;
+use spectre_cli::cli_args::{CliDisable, CliEnable};
+use spectre_database::client::SpectreDbClient;
+use spectre_spectred::pool::manager::SpectredManager;
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -25,8 +25,8 @@ pub async fn process_virtual_chain(
     metrics: Arc<RwLock<Metrics>>,
     start_vcp: Arc<AtomicBool>,
     checkpoint_queue: Arc<ArrayQueue<CheckpointBlock>>,
-    kaspad_pool: Pool<KaspadManager, Object<KaspadManager>>,
-    database: KaspaDbClient,
+    spectred_pool: Pool<SpectredManager, Object<SpectredManager>>,
+    database: SpectreDbClient,
 ) {
     let batch_scale = settings.cli_args.batch_scale;
     let disable_transaction_acceptance = settings.cli_args.is_disabled(CliDisable::TransactionAcceptance);
@@ -51,9 +51,9 @@ pub async fn process_virtual_chain(
             continue;
         }
         debug!("Getting virtual chain from start_hash {}", start_hash.to_string());
-        match kaspad_pool.get().await {
-            Ok(kaspad) => {
-                match kaspad.get_virtual_chain_from_block(start_hash, !disable_transaction_acceptance).await {
+        match spectred_pool.get().await {
+            Ok(spectred) => {
+                match spectred.get_virtual_chain_from_block(start_hash, !disable_transaction_acceptance).await {
                     Ok(res) => {
                         let start_request_time = Instant::now();
                         let added_blocks_count = res.added_chain_block_hashes.len();
@@ -61,7 +61,7 @@ pub async fn process_virtual_chain(
                             let removed_chain_block_hashes = res.removed_chain_block_hashes.as_slice();
                             let added_chain_block_hashes = &res.added_chain_block_hashes[..added_blocks_count - tip_distance];
                             let last_accepting_block =
-                                kaspad.get_block(*added_chain_block_hashes.last().unwrap(), false).await.unwrap();
+                                spectred.get_block(*added_chain_block_hashes.last().unwrap(), false).await.unwrap();
                             let checkpoint_block = CheckpointBlock {
                                 origin: CheckpointOrigin::Vcp,
                                 hash: last_accepting_block.header.hash.into(),
@@ -148,7 +148,7 @@ pub async fn process_virtual_chain(
                 }
             }
             Err(e) => {
-                error!("Failed getting kaspad connection from pool: {}", e);
+                error!("Failed getting spectred connection from pool: {}", e);
                 sleep(err_delay).await
             }
         }

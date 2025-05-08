@@ -1,5 +1,5 @@
 [package]
-name = "simply-kaspa-kaspad"
+name = "spectre-spectred"
 rust-version.workspace = true
 authors.workspace = true
 license-file.workspace = true
@@ -9,12 +9,12 @@ edition.workspace = true
 default = []
 
 [lib]
-name = "simply_kaspa_kaspad"
+name = "spectre_spectred"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-kaspa-wrpc-client.workspace = true
-kaspa-rpc-core.workspace = true
+spectre-wrpc-client.workspace = true
+spectre-rpc-core.workspace = true
 tokio.workspace = true
 deadpool.workspace = true
 workflow-core.workspace = true

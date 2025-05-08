@@ -4,8 +4,8 @@ use bigdecimal::ToPrimitive;
 use bytesize::ByteSize;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use simply_kaspa_database::models::query::database_details::DatabaseDetails;
-use simply_kaspa_database::models::query::table_details::TableDetails;
+use spectre_database::models::query::database_details::DatabaseDetails;
+use spectre_database::models::query::table_details::TableDetails;
 use utoipa::ToSchema;
 
 #[derive(ToSchema, Clone, Serialize, Deserialize)]

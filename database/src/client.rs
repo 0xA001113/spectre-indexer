@@ -22,18 +22,18 @@ use crate::models::types::hash::Hash;
 use crate::query;
 
 #[derive(Clone)]
-pub struct KaspaDbClient {
+pub struct SpectreDbClient {
     pool: Pool<Postgres>,
 }
 
-impl KaspaDbClient {
+impl SpectreDbClient {
     const SCHEMA_VERSION: u8 = 9;
 
-    pub async fn new(url: &str) -> Result<KaspaDbClient, Error> {
+    pub async fn new(url: &str) -> Result<SpectreDbClient, Error> {
         Self::new_with_args(url, 10).await
     }
 
-    pub async fn new_with_args(url: &str, pool_size: u32) -> Result<KaspaDbClient, Error> {
+    pub async fn new_with_args(url: &str, pool_size: u32) -> Result<SpectreDbClient, Error> {
         let url_cleaned = Regex::new(r"(postgres://postgres:)[^@]+(@)").expect("Failed to parse url").replace(url, "$1$2");
         debug!("Connecting to PostgreSQL {}", url_cleaned);
         let connect_opts = PgConnectOptions::from_str(url)?.log_slow_statements(LevelFilter::Warn, Duration::from_secs(60));
@@ -43,7 +43,7 @@ impl KaspaDbClient {
             .connect_with(connect_opts)
             .await?;
         info!("Connected to PostgreSQL {}", url_cleaned);
-        Ok(KaspaDbClient { pool })
+        Ok(SpectreDbClient { pool })
     }
 
     pub async fn close(&mut self) -> Result<(), Error> {

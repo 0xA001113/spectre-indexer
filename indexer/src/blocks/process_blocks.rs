@@ -10,12 +10,12 @@ use crate::web::model::metrics::Metrics;
 use chrono::DateTime;
 use crossbeam_queue::ArrayQueue;
 use log::{debug, info, warn};
-use simply_kaspa_cli::cli_args::CliDisable;
-use simply_kaspa_database::client::KaspaDbClient;
-use simply_kaspa_database::models::block::Block;
-use simply_kaspa_database::models::block_parent::BlockParent;
-use simply_kaspa_database::models::types::hash::Hash as SqlHash;
-use simply_kaspa_mapping::mapper::KaspaDbMapper;
+use spectre_cli::cli_args::CliDisable;
+use spectre_database::client::SpectreDbClient;
+use spectre_database::models::block::Block;
+use spectre_database::models::block_parent::BlockParent;
+use spectre_database::models::types::hash::Hash as SqlHash;
+use spectre_mapping::mapper::SpectreDbMapper;
 use tokio::sync::RwLock;
 use tokio::time::sleep;
 
@@ -26,8 +26,8 @@ pub async fn process_blocks(
     start_vcp: Arc<AtomicBool>,
     rpc_blocks_queue: Arc<ArrayQueue<BlockData>>,
     checkpoint_queue: Arc<ArrayQueue<CheckpointBlock>>,
-    database: KaspaDbClient,
-    mapper: KaspaDbMapper,
+    database: SpectreDbClient,
+    mapper: SpectreDbMapper,
 ) {
     const NOOP_DELETES_BEFORE_VCP: i32 = 10;
     let batch_scale = settings.cli_args.batch_scale;
@@ -131,7 +131,7 @@ pub async fn process_blocks(
     }
 }
 
-async fn insert_blocks(batch_scale: f64, values: Vec<Block>, database: KaspaDbClient) -> u64 {
+async fn insert_blocks(batch_scale: f64, values: Vec<Block>, database: SpectreDbClient) -> u64 {
     let batch_size = min((200f64 * batch_scale) as usize, 3500); // 2^16 / fields
     let key = "blocks";
     let start_time = Instant::now();
@@ -144,7 +144,7 @@ async fn insert_blocks(batch_scale: f64, values: Vec<Block>, database: KaspaDbCl
     rows_affected
 }
 
-async fn insert_block_parents(batch_scale: f64, values: Vec<BlockParent>, database: KaspaDbClient) -> u64 {
+async fn insert_block_parents(batch_scale: f64, values: Vec<BlockParent>, database: SpectreDbClient) -> u64 {
     let batch_size = min((400f64 * batch_scale) as usize, 10000); // 2^16 / fields
     let key = "block_parents";
     let start_time = Instant::now();
@@ -157,7 +157,7 @@ async fn insert_block_parents(batch_scale: f64, values: Vec<BlockParent>, databa
     rows_affected
 }
 
-async fn delete_transaction_acceptances(batch_scale: f64, block_hashes: Vec<SqlHash>, db: KaspaDbClient) -> u64 {
+async fn delete_transaction_acceptances(batch_scale: f64, block_hashes: Vec<SqlHash>, db: SpectreDbClient) -> u64 {
     let batch_size = min((100f64 * batch_scale) as usize, 50000); // 2^16 / fields
     let key = "transaction_acceptances";
     let start_time = Instant::now();
