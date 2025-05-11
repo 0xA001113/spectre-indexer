@@ -81,6 +81,7 @@ community.
 ### Contribute to development
 
 Supertypo: `kaspa:qrjtsnnpjyvlmkffdqyayrny3qyen9yjkpuw7xvhsz36n69wmrfdyf3nwv67t`
+
 Spectre: `spectre:qrxf48dgrdkjxllxczek3uweuldtan9nanzjsavk0ak9ynwn0zsayjjh7upez`
 
 # Getting started

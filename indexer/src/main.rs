@@ -85,13 +85,14 @@ async fn start_processing(cli_args: CliArgs, spectred_pool: Pool<SpectredManager
     let block_dag_info = block_dag_info.unwrap();
     let net_bps = match block_dag_info.network {
         NetworkId { network_type: NetworkType::Mainnet, suffix: None } => {
-            if block_dag_info.virtual_daa_score >= 110165000 {
-                10
+            // sigma: todo
+            if block_dag_info.virtual_daa_score >= u64::MAX {
+                8
             } else {
                 1
             }
         }
-        _ => 10,
+        _ => 8,
     };
     let net_tps_max = net_bps as u16 * 300;
     info!("Assuming {} block(s) per second for cache sizes", net_bps);
